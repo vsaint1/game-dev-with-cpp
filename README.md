@@ -26,7 +26,7 @@ Sempre tive interesse em entender como engines funcionam por "de baixo dos panos
 
 - Aprender como gerenciar um projeto de software complexo.
 - Aprender como funcionam e abstrair Pipelines gráficas (Opengl, OpenGLES, Vulkan, Direct3D12, Metal).
-- Cross-compilar e exportar para múltiplas plataformas, atualmente (Windows, Linux, macOS, iOS, Android, WASM).
+- Cross-compilar e exportar para múltiplas plataformas, atualmente (Windows, Linux, macOS, iOS, Android, WebGL).
 - Aprender boas práticas de design de software.
 - Melhorar minhas habilidades em C++ e Build Systems (CMake).
 - Aprender sobre computação gráfica, matemática 3D e otimização de performance.
@@ -273,7 +273,7 @@ Esse fluxo demonstra como é possível escrever **código C++ uma única vez** e
 * Comunidade e Ecosistema menor se comparada a Unity ou Unreal.
 * Portabilidade para consoles é limitada por ser Open Source ( Porém existe W4Consoles que oferece esses serviços).
 * Fácilmente decompilável para código fonte e assets. (A encriptação é bastante fraca e além de ser Open Source, existem ferramentas para extrair assets e código fonte como gdsdecomp).
-
+* Forte dependência de um modelo orientado a objetos baseado em herança (Nodes), onde um único Node pode acumular múltiplos níveis de herança. Resultando em impactos diretos em performance, como **cache misses frequentes**, **uso excessivo de ponteiros para funções (vtable)** e menor previsibilidade de acesso à memória, dificultando otimizações em grandes cenas ou projetos complexos.
 
 ---
 
