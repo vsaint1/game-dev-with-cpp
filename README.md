@@ -7,7 +7,7 @@ Olá pessoal, esta postagem apresenta uma visão prática e teórica sobre o des
 
 ## Introdução
 
-Nós sabemos que na programação existem diversas áreas, linguagens e ferramentas. Quando falamos de desenvolvimento de jogos, C++ é uma das linguagens mais poderosas e amplamente utilizadas, especialmente em engines **AAA** tanto públicas quanto privadas. No entanto, o desenvolvimento de jogos requer iteração rápida, ferramentas visuais e um ecossistema robusto, o que pode ser desafiador ao trabalhar diretamente com C++ por ser uma linguagem de baixo nível e consideravelmente complexa.
+Nós sabemos que na programação existem diversas áreas, linguagens e ferramentas, porém, quando falamos de desenvolvimento de jogos, C++ é uma das linguagens mais poderosas e amplamente utilizada, especialmente em engines tanto públicas quanto privadas. No entanto, o desenvolvimento de jogos requer iteração rápida, ferramentas visuais e um ecossistema robusto, o que pode ser desafiador ao trabalhar diretamente com C++ por ser uma linguagem de baixo nível e consideravelmente complexa.
 
 Neste artigo, compartilho experiências reais no desenvolvimento com C++, desde a criação de sistemas de engine até o uso de C++ dentro da Godot via GDExtensions, além de uma análise comparativa entre as principais game engines do mercado (Godot, Unity e Unreal Engine).
 
@@ -34,7 +34,7 @@ Sempre tive interesse em entender como engines funcionam por "de baixo dos panos
 
 ### Arquitetura Geral
 
-Atualmente a engine possui **features básicas 2D/3D** ênfase no 2D,  separando responsabilidades como renderização, recursos, input e loop principal. Abaixo é apresentada uma visão geral da arquitetura do software.
+Atualmente a engine possui features básicas 2D/3D, com maior ênfase em 2D,  separando responsabilidades como renderização, recursos, input e loop principal. Abaixo é apresentada uma visão geral da arquitetura do software.
 
 <img src="docs/architecture_diagram.png" alt="Diagrama de Arquitetura da Engine" />
 
@@ -50,9 +50,9 @@ Essa abordagem normalmente se baseia em alguns pilares comuns entre engines mode
 - **Objetos imutáveis ou semi-imutáveis**, como pipelines e materiais, que reduzem estados globais e tornam o fluxo de renderização mais previsível.
 - **Separação clara entre lógica de jogo e renderização**, evitando que código de gameplay conheça detalhes da GPU.
 
-Sem a necessidade de lidar diretamente com diferenças de Backends gráficos como OpenGL, OpenGLES, Vulkan, Metal ou Direct3D12.
+Sem a necessidade de lidar diretamente com as diferenças entre backends gráficos como OpenGL, OpenGLES, Vulkan, Metal ou Direct3D12.
 
-No caso dos shaders, engines modernas geralmente possuem uma pipeline de shaders e uma linguagem de shaders customizada, o que permite escrever shaders em uma linguagem de alto nível (baseada em GLSL ou HLSL) e compilá-los para múltiplas plataformas. A engine gerencia o pre-processamento, geração de código, otimização e vinculação dos shaders conforme o backend gráfico utilizado como demonstrado abaixo: 
+No caso dos shaders, engines modernas possuem uma pipeline de shaders em conjunto com abstrações que permitem escrever shaders em uma linguagem de alto nível (baseada em GLSL ou HLSL) e compilá-los para múltiplas plataformas. A engine gerencia o pre-processamento, geração de código, otimização e vinculação dos shaders conforme o backend gráfico utilizado como demonstrado abaixo: 
 
 <img src="docs/shader_pipeline.png" alt="Pipeline de Shaders" />
 
@@ -80,24 +80,37 @@ Mesmo que a engine não vire um produto final, o conhecimento adquirido é altam
 
 ---
 
-## Experiência Utilizando C++ na Godot
+## Experiência Utilizando C++ e Godot Engine
 
 A Godot Engine permite desenvolvimento em várias linguagens, sendo o **GDExtension** a forma oficial de integrar código C++ nativo.
 A Godot Engine tem suporte oficial para GDScript e C# (via Mono), mas o GDExtension oferece uma alternativa poderosa para quem deseja utilizar C++ e diversas outras linguagens.
 
-### O que é GDExtension
+### Por que C# na Godot é considerado ruim?
+
+Por não existir uma Pipeline similar a IL2CPP (C# -> C++ -> Nativo) como a Unity, o C# na Godot roda via Mono (uma implementação do .NET), o que traz algumas limitações:
+
+- Performance inferior comparada a código nativo.
+- Integração mais complexa com a API da Godot.
+- Tamanho maior do binário final devido à inclusão do runtime Mono.
+- Sem Supporte oficial para exportação Web (WASM).
+- Exportação para Mobile (iOS/Android) ainda é `experimental` e com diversas limitações.
+
+
+### O que é GDExtension (Godot Extension)?
 
 GDExtension permite criar bibliotecas em diversas linguagens que são carregadas dinamicamente pela Godot, possibilitando:
 
 - Execução de código nativo.
 - Melhor desempenho em sistemas críticos.
 - Integração direta com a API da engine.
+- Flexibilidade para usar C++ e outras linguagens.
 
 ### Prós do Uso de C++ na Godot
 
 - Alto desempenho.
 - Reuso de bibliotecas C++ existentes.
 - Ideal para lógica pesada (IA, física customizada, geração procedural).
+- Hot-reload durante o desenvolvimento.
 
 ### Contras
 
@@ -115,6 +128,8 @@ GDExtension permite criar bibliotecas em diversas linguagens que são carregadas
 Abaixo está uma demo de um jogo 3D simples feito com **C++ na Godot**, utilizando **GDExtensions**:
 
 [Projeto Exemplo C++ na Godot](https://github.com/vsaint1/godot-demo-cpp)
+
+<img src="docs/godot_cpp_demo.jpg" alt="Godot C++ Demo" />
 
 ### Requisitos
 
@@ -224,11 +239,37 @@ Isso irá gerar os artefatos necessários para WebAssembly, incluindo:
 
 ### 5. Registrando a Biblioteca Web no Projeto Godot
 
-No arquivo `.gdextension`, inclua o target web:
+Abaixo contém um arquivo de configuração da GDExtension que informa à Godot quais bibliotecas carregar para cada plataforma (Windows, Linux, macOS, iOS, Android, Web):
 
 ```ini
+[configuration]
+
+entry_symbol = "example_library_init"
+compatibility_minimum = "4.1"
+reloadable = true # Permite hot-reload no editor
+
 [libraries]
-web.release = "res://bin/libexample.wasm"
+macos.debug = "res://bin/macos/example.macos.template_debug.framework"
+macos.release = "res://bin/macos/example.macos.template_release.framework"
+ios.debug = "res://bin/ios/example.ios.template_debug.xcframework"
+ios.release = "res://bin/ios/example.ios.template_release.xcframework"
+windows.debug.x86_32 = "res://bin/windows/example.windows.template_debug.x86_32.dll"
+windows.release.x86_32 = "res://bin/windows/example.windows.template_release.x86_32.dll"
+windows.debug.x86_64 = "res://bin/windows/example.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "res://bin/windows/example.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "res://bin/linux/example.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "res://bin/linux/example.linux.template_release.x86_64.so"
+linux.debug.arm64 = "res://bin/linux/example.linux.template_debug.arm64.so"
+linux.release.arm64 = "res://bin/linux/example.linux.template_release.arm64.so"
+linux.debug.rv64 = "res://bin/linux/example.linux.template_debug.rv64.so"
+linux.release.rv64 = "res://bin/linux/example.linux.template_release.rv64.so"
+android.debug.x86_64 = "res://bin/android/example.android.template_debug.x86_64.so"
+android.release.x86_64 = "res://bin/android/example.android.template_release.x86_64.so"
+android.debug.arm64 = "res://bin/android/example.android.template_debug.arm64.so"
+android.release.arm64 = "res://bin/android/example.android.template_release.arm64.so"
+web.wasm32.debug = "res://bin/web/example.web.template_debug.wasm32.nothreads.wasm"
+web.wasm32.release = "res://bin/web/example.web.template_release.wasm32.nothreads.wasm"
+
 ```
 
 Esse arquivo informa à Godot qual biblioteca deve ser carregada para cada plataforma.
@@ -288,11 +329,14 @@ Esse fluxo demonstra como é possível escrever **código C++ uma única vez** e
 * Pipeline de IL2CPP ( C# -> C++ -> Nativo) para melhor performance.
 * Ferramentas maduras e editor robusto.
 * Testada em produção por anos.
+* ECS (Entity Component System) para melhor performance e escalabilidade. (Por de baixo dos panos, MonoBehaviour utiliza um sistema baseado em componentes, mas não é um ECS puro como o DOTS).
+* Sólido 2D e 3D.
+
 
 **Contras**
 
 * Engine proprietária e paga, com modelo de negócios baseado em assinaturas.
-* Diversas funcionalidades avançadas e recursos recentes ficam **bloqueados por paywall**, dependendo do plano contratado.
+* Diversas funcionalidades avançadas e recursos recentes ficam **bloqueados por paywall**, dependendo do plano contratado. (e.g PlatformToolkit (Unity 6.3) que exige plano Pro para utilizar a SDK da Steam e Mobile)
 * Mudanças frequentes no modelo de licenciamento, gerando insegurança para desenvolvedores e estúdios.
 * Menor controle sobre arquitetura interna e sistemas críticos.
 * Parte do ecossistema é fragmentada entre pacotes oficiais, experimentais e/ou pagos.
@@ -311,6 +355,7 @@ Esse fluxo demonstra como é possível escrever **código C++ uma única vez** e
 * Grande comunidade e ecossistema.
 * Blueprints facilitam prototipação e o desenvolvimento.
 * Source Available (é diferente de Open Source).
+* Sólido 3D e VR/AR.
 
 **Contras**
 
@@ -319,7 +364,7 @@ Esse fluxo demonstra como é possível escrever **código C++ uma única vez** e
 * Requer hardware potente para desenvolvimento.
 * Diversas features que poderão ser desnecessárias para projetos menores.
 * Suporte limitado para 2D e Exportação para Web (WASM).
-* Possui um dos piores sistemas de build e integração contínua (CI/CD) entre as engines comerciais.
+* Possui um dos piores sistemas de build (exportação do projeto) e integração contínua (CI/CD) entre as engines comerciais.
 * Extremamente fácil fazer cheats e mods em jogos feitos com Unreal Engine, devido a facilidade de engenharia reversa e ferramentas amplamente disponíveis na internet. 
 
 ---
